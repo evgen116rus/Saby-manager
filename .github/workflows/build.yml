@@ -1,1 +1,39 @@
+name: Build SabyManager
 
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:      # ручной запуск кнопкой Run workflow
+
+env:
+  SOURCE: SabyManager.cpp   # имя файла с кодом в репозитории
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, x86]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Build
+        shell: cmd
+        run: |
+          mkdir out
+          cl /nologo /std:c++17 /EHsc /O2 /W3 /utf-8 /DUNICODE /D_UNICODE %SOURCE% /Fe:out\SabyManager_${{ matrix.arch }}.exe /link /MANIFEST:EMBED /MANIFESTUAC:"level='requireAdministrator' uiAccess='false'" /MANIFESTDEPENDENCY:"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SabyManager-${{ matrix.arch }}
+          path: out/*.exe
+          if-no-files-found: error
